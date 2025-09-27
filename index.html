@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Panel</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 2rem auto;
+    }
+    nav {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    nav a {
+      text-decoration: underline;
+      color: #000000;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    section { display: none; }
+    section.active { display: block; }
+    .form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .form input, .form button { padding: 8px; }
+    .form button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+    ul { list-style: none; padding: 0; }
+    li {
+      margin-bottom: 8px;
+      background: #f8f8f8;
+      padding: 10px;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    li img {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    li button {
+      background: #dc2626;
+      border: none;
+      padding: 7px 15px;
+      color: white;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <!-- ✅ Navbar -->
+  <nav>
+    <a onclick="showPanel('banner')">Banner Messages</a>
+    <a onclick="showPanel('album')">Album</a>
+    <a onclick="showPanel('barbers')">Barbers</a>
+  </nav>
+  <hr/>
+
+  <!-- Banner Section -->
+  <section id="banner" class="active">
+    <h2>Manage Banner Messages</h2>
+    <div class="form" style="flex-direction: row;">
+      <input id="newMessage" placeholder="Enter new banner message"/>
+      <button onclick="addMessage()" style="padding: 10px 20px; border-radius: 2px;">Add</button>
+    </div>
+    <ul id="messages"></ul>
+  </section>
+
+  <!-- Album Section -->
+  <section id="album">
+    <h2>Manage Album Carousel</h2>
+    <div class="form">
+      <input type="file" id="albumFile" accept="image/*" />
+      <button onclick="uploadAlbumImage()">Upload Image</button>
+    </div>
+    <ul id="albumList"></ul>
+  </section>
+
+  <!-- Barbers Section -->
+  <section id="barbers">
+    <h2>Manage Barbers</h2>
+    <div class="form">
+      <input type="text" id="barberName" placeholder="Enter barber name"/>
+      <input type="file" id="barberFile" accept="image/*" />
+      <button onclick="uploadBarber()">Add Barber</button>
+    </div>
+    <ul id="barberList"></ul>
+  </section>
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js";
+
+    const supabase = createClient(
+      "https://gycwoawekmmompvholqr.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5Y3dvYXdla21tb21wdmhvbHFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NDI3NzYsImV4cCI6MjA3MzQxODc3Nn0.DHYyJrV884VxxljeVZ0SQdWYMBSAvpKpCr1jKKaP1AI"
+    );
+
+    const ALBUM_BUCKET = "album_bucket";
+    const BARBERS_BUCKET = "barbers_bucket";
+
+    // ----------------- Banner -----------------
+    async function loadMessages() {
+      const { data, error } = await supabase.from("banner_messages").select("*").order("created_at");
+      if (error) return alert("❌ Failed to load messages: " + error.message);
+      const list = document.getElementById("messages");
+      list.innerHTML = "";
+      if (!data.length) alert("ℹ️ No banner messages found.");
+      data.forEach(msg => {
+        const li = document.createElement("li");
+        li.textContent = msg.text;
+        const btn = document.createElement("button");
+        btn.textContent = "Delete";
+        btn.onclick = async () => { 
+          let { error: delError } = await supabase.from("banner_messages").delete().eq("id", msg.id); 
+          if (delError) alert("❌ Failed to delete message: " + delError.message);
+          else alert("✅ Banner message deleted!");
+          loadMessages(); 
+        };
+        li.appendChild(btn);
+        list.appendChild(li);
+      });
+    }
+    window.addMessage = async function() {
+      const input = document.getElementById("newMessage");
+      if (!input.value) return alert("⚠️ Enter message first!");
+      let { error } = await supabase.from("banner_messages").insert({ text: input.value });
+      if (error) return alert("❌ Failed to add message: " + error.message);
+      alert("✅ Banner message added!");
+      input.value = "";
+      loadMessages();
+    };
+
+    // ----------------- Album -----------------
+    async function loadAlbum() {
+      const { data, error } = await supabase.from("album").select("*").order("created_at");
+      if (error) return alert("❌ Failed to load album: " + error.message);
+      const list = document.getElementById("albumList");
+      list.innerHTML = "";
+      if (!data.length) alert("ℹ️ No album images found.");
+      data.forEach((img) => {
+        const li = document.createElement("li");
+        li.innerHTML = `<img src="${img.image_url}" alt="Album Image"/>`;
+        const btn = document.createElement("button");
+        btn.textContent = "Delete";
+        btn.onclick = async () => {
+          const filePath = img.image_url.split("/").pop();
+          let { error: fileError } = await supabase.storage.from(ALBUM_BUCKET).remove([filePath]);
+          if (fileError) alert("❌ Failed to delete file: " + fileError.message);
+          else alert("✅ File deleted from storage");
+          let { error: dbError } = await supabase.from("album").delete().eq("id", img.id);
+          if (dbError) alert("❌ Failed to delete DB row: " + dbError.message);
+          else alert("✅ Album record deleted");
+          loadAlbum();
+        };
+        li.appendChild(btn);
+        list.appendChild(li);
+      });
+    }
+    window.uploadAlbumImage = async function () {
+      const fileInput = document.getElementById("albumFile");
+      if (!fileInput.files.length) return alert("⚠️ Please select an image!");
+      const file = fileInput.files[0];
+      const filePath = `${Date.now()}-${file.name}`;
+      let { error: uploadError } = await supabase.storage.from(ALBUM_BUCKET).upload(filePath, file);
+      if (uploadError) return alert("❌ Upload failed: " + uploadError.message);
+      alert("✅ Image uploaded to storage");
+      const { data: { publicUrl } } = supabase.storage.from(ALBUM_BUCKET).getPublicUrl(filePath);
+      let { error: insertError } = await supabase.from("album").insert({ image_url: publicUrl });
+      if (insertError) return alert("❌ Failed to save in DB: " + insertError.message);
+      alert("✅ Album image added!");
+      fileInput.value = "";
+      loadAlbum();
+    };
+
+    // ----------------- Barbers -----------------
+    async function loadBarbers() {
+      const { data, error } = await supabase.from("barbers").select("*").order("created_at");
+      if (error) return alert("❌ Failed to load barbers: " + error.message);
+      const list = document.getElementById("barberList");
+      list.innerHTML = "";
+      if (!data.length) alert("ℹ️ No barbers found.");
+      data.forEach(barber => {
+        const li = document.createElement("li");
+        li.innerHTML = `<img src="${barber.image_url}" alt="${barber.name}"/> <span>${barber.name}</span>`;
+        const btn = document.createElement("button");
+        btn.textContent = "Delete";
+        btn.onclick = async () => {
+          const filePath = barber.image_url.split("/").pop();
+          let { error: fileError } = await supabase.storage.from(BARBERS_BUCKET).remove([filePath]);
+          if (fileError) alert("❌ Failed to delete file: " + fileError.message);
+          else alert("✅ File deleted from storage");
+          let { error: dbError } = await supabase.from("barbers").delete().eq("id", barber.id);
+          if (dbError) alert("❌ Failed to delete DB row: " + dbError.message);
+          else alert("✅ Barber deleted");
+          loadBarbers();
+        };
+        li.appendChild(btn);
+        list.appendChild(li);
+      });
+    }
+    window.uploadBarber = async function () {
+      const name = document.getElementById("barberName").value;
+      const file = document.getElementById("barberFile").files[0];
+      if (!name || !file) return alert("⚠️ Name and image required!");
+      const filePath = `${Date.now()}-${file.name}`;
+      let { error: uploadError } = await supabase.storage.from(BARBERS_BUCKET).upload(filePath, file);
+      if (uploadError) return alert("❌ Upload failed: " + uploadError.message);
+      alert("✅ Image uploaded to storage");
+      const { data: { publicUrl } } = supabase.storage.from(BARBERS_BUCKET).getPublicUrl(filePath);
+      let { error: insertError } = await supabase.from("barbers").insert({ name, image_url: publicUrl });
+      if (insertError) return alert("❌ Failed to save barber: " + insertError.message);
+      alert("✅ Barber added!");
+      document.getElementById("barberName").value = "";
+      document.getElementById("barberFile").value = "";
+      loadBarbers();
+    };
+
+    // ----------------- Init -----------------
+    loadMessages();
+    loadAlbum();
+    loadBarbers();
+
+    // Panel switcher
+    window.showPanel = function(id) {
+      document.querySelectorAll("section").forEach(sec => sec.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+    }
+  </script>
+</body>
+</html>
