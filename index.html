@@ -74,12 +74,14 @@
   <!-- Banner Section -->
   <section id="banner" class="active">
     <h2>Manage Banner Messages</h2>
-    <div class="form" style="flex-direction: row;">
+    <div class="form" style="flex-direction: row; gap: 0.5rem;">
       <input id="newMessage" placeholder="Enter new banner message"/>
+      <input id="newLink" placeholder="Enter link (optional)" style="flex:1"/>
       <button onclick="addMessage()" style="padding: 10px 20px; border-radius: 2px;">Add</button>
     </div>
     <ul id="messages"></ul>
   </section>
+
 
   <!-- Album Section -->
   <section id="album">
@@ -115,35 +117,50 @@
 
     // ----------------- Banner -----------------
     async function loadMessages() {
-      const { data, error } = await supabase.from("banner_messages").select("*").order("created_at");
-      if (error) return alert("❌ Failed to load messages: " + error.message);
-      const list = document.getElementById("messages");
-      list.innerHTML = "";
-      if (!data.length) alert("ℹ️ No banner messages found.");
-      data.forEach(msg => {
-        const li = document.createElement("li");
+    const { data, error } = await supabase.from("banner_messages").select("*").order("created_at");
+    if (error) return alert("❌ Failed to load messages: " + error.message);
+    const list = document.getElementById("messages");
+    list.innerHTML = "";
+    if (!data.length) alert("ℹ️ No banner messages found.");
+    data.forEach(msg => {
+      const li = document.createElement("li");
+
+      if (msg.link) {
+        // ✅ Kung may link, clickable yung message
+        li.innerHTML = `<span>${msg.text} - <a href="${msg.link}" target="_blank" style="color:blue; text-decoration:underline;">link</a></span>`;
+      } else {
         li.textContent = msg.text;
-        const btn = document.createElement("button");
-        btn.textContent = "Delete";
-        btn.onclick = async () => { 
-          let { error: delError } = await supabase.from("banner_messages").delete().eq("id", msg.id); 
-          if (delError) alert("❌ Failed to delete message: " + delError.message);
-          else alert("✅ Banner message deleted!");
-          loadMessages(); 
-        };
-        li.appendChild(btn);
-        list.appendChild(li);
-      });
-    }
-    window.addMessage = async function() {
-      const input = document.getElementById("newMessage");
-      if (!input.value) return alert("⚠️ Enter message first!");
-      let { error } = await supabase.from("banner_messages").insert({ text: input.value });
-      if (error) return alert("❌ Failed to add message: " + error.message);
-      alert("✅ Banner message added!");
-      input.value = "";
-      loadMessages();
-    };
+      }
+
+      const btn = document.createElement("button");
+      btn.textContent = "Delete";
+      btn.onclick = async () => { 
+        let { error: delError } = await supabase.from("banner_messages").delete().eq("id", msg.id); 
+        if (delError) alert("❌ Failed to delete message: " + delError.message);
+        else alert("✅ Banner message deleted!");
+        loadMessages(); 
+      };
+      li.appendChild(btn);
+      list.appendChild(li);
+    });
+  }
+
+window.addMessage = async function() {
+  const input = document.getElementById("newMessage");
+  const linkInput = document.getElementById("newLink");
+  if (!input.value) return alert("⚠️ Enter message first!");
+
+  let { error } = await supabase.from("banner_messages").insert({ 
+    text: input.value, 
+    link: linkInput.value || null 
+  });
+  if (error) return alert("❌ Failed to add message: " + error.message);
+  alert("✅ Banner message added!");
+  input.value = "";
+  linkInput.value = "";
+  loadMessages();
+};
+
 
     // ----------------- Album -----------------
     async function loadAlbum() {
