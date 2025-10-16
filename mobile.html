@@ -132,9 +132,17 @@
       transform: scale(1.03);
     }
 
-    .caption {
-      font-size: 0.9rem;
-      color: #374151;
+    .title-caption {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #1e3a8a;
+      margin-bottom: 0.25rem;
+      text-align: center;
+    }
+
+    .desc-caption {
+      font-size: 0.85rem;
+      color: #4b5563;
       margin-bottom: 0.5rem;
       text-align: center;
       word-wrap: break-word;
@@ -191,13 +199,14 @@
 <body>
   <header>
     <h1>Album Manager</h1>
-    <p>Manage uploaded carousel images and captions</p>
+    <p>Manage uploaded carousel images, titles, and descriptions</p>
   </header>
 
   <div class="card">
     <div class="form">
       <input type="file" id="albumFile" accept="image/*" />
-      <input type="text" id="albumText" placeholder="Enter caption or text..." />
+      <input type="text" id="albumTitle" placeholder="Enter title..." />
+      <input type="text" id="albumDesc" placeholder="Enter description..." />
       <button onclick="uploadAlbumImage()">Upload Image + Text</button>
     </div>
     <ul id="albumList"></ul>
@@ -211,10 +220,10 @@
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5Y3dvYXdla21tb21wdmhvbHFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NDI3NzYsImV4cCI6MjA3MzQxODc3Nn0.DHYyJrV884VxxljeVZ0SQdWYMBSAvpKpCr1jKKaP1AI"
     );
 
-    const ALBUM_BUCKET = "album_bucket";
+    const ALBUM_MOBILE = "album_mobile";
 
     async function loadAlbum() {
-      const { data, error } = await supabase.from("album").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("album_mobile").select("*").order("created_at", { ascending: false });
       if (error) return alert("❌ Failed to load album: " + error.message);
 
       const list = document.getElementById("albumList");
@@ -228,15 +237,16 @@
         const li = document.createElement("li");
         li.innerHTML = `
           <img src="${img.image_url}" alt="Album Image"/>
-          ${img.caption ? `<div class="caption">${img.caption}</div>` : ""}
+          ${img.title_caption ? `<div class="title-caption">${img.title_caption}</div>` : ""}
+          ${img.desc_caption ? `<div class="desc-caption">${img.desc_caption}</div>` : ""}
         `;
         const btn = document.createElement("button");
         btn.textContent = "Delete";
         btn.onclick = async () => {
           const filePath = img.image_url.split("/").pop();
-          let { error: fileError } = await supabase.storage.from(ALBUM_BUCKET).remove([filePath]);
+          let { error: fileError } = await supabase.storage.from(ALBUM_MOBILE).remove([filePath]);
           if (fileError) alert("❌ Failed to delete file: " + fileError.message);
-          let { error: dbError } = await supabase.from("album").delete().eq("id", img.id);
+          let { error: dbError } = await supabase.from("album_mobile").delete().eq("id", img.id);
           if (dbError) alert("❌ Failed to delete record: " + dbError.message);
           else alert("✅ Image deleted!");
           loadAlbum();
@@ -248,28 +258,33 @@
 
     window.uploadAlbumImage = async function () {
       const fileInput = document.getElementById("albumFile");
-      const textInput = document.getElementById("albumText");
+      const titleInput = document.getElementById("albumTitle");
+      const descInput = document.getElementById("albumDesc");
+
       if (!fileInput.files.length) return alert("⚠️ Please select an image!");
 
       const file = fileInput.files[0];
-      const caption = textInput.value.trim();
+      const title_caption = titleInput.value.trim();
+      const desc_caption = descInput.value.trim();
 
       const filePath = `${Date.now()}-${file.name}`;
-      let { error: uploadError } = await supabase.storage.from(ALBUM_BUCKET).upload(filePath, file);
+      let { error: uploadError } = await supabase.storage.from(ALBUM_MOBILE).upload(filePath, file);
       if (uploadError) return alert("❌ Upload failed: " + uploadError.message);
 
-      const { data: { publicUrl } } = supabase.storage.from(ALBUM_BUCKET).getPublicUrl(filePath);
+      const { data: { publicUrl } } = supabase.storage.from(ALBUM_MOBILE).getPublicUrl(filePath);
 
-      let { error: insertError } = await supabase.from("album").insert({
+      let { error: insertError } = await supabase.from("album_mobile").insert({
         image_url: publicUrl,
-        caption: caption || null
+        title_caption: title_caption || null,
+        desc_caption: desc_caption || null
       });
 
       if (insertError) return alert("❌ Failed to save in DB: " + insertError.message);
 
-      alert("✅ Image & text uploaded!");
+      alert("✅ Image, title & description uploaded!");
       fileInput.value = "";
-      textInput.value = "";
+      titleInput.value = "";
+      descInput.value = "";
       loadAlbum();
     };
 
