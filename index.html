@@ -2,64 +2,207 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Admin Panel</title>
+  <title>Admin Website Panel</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: 2rem auto;
-    }
-    nav {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-    nav a {
-      text-decoration: underline;
-      color: #000000;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    section { display: none; }
-    section.active { display: block; }
-    .form {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-    .form input, .form button { padding: 8px; }
-    .form button {
-      background: #2563eb;
-      color: white;
-      border: none;
-      border-radius: 20px;
-      cursor: pointer;
-    }
-    ul { list-style: none; padding: 0; }
-    li {
-      margin-bottom: 8px;
-      background: #f8f8f8;
-      padding: 10px;
-      border-radius: 6px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    li img {
-      width: 70px;
-      height: 70px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-    li button {
-      background: #dc2626;
-      border: none;
-      padding: 7px 15px;
-      color: white;
-      border-radius: 10px;
-      cursor: pointer;
-    }
+      * {
+          box-sizing: border-box;
+        }
+
+        body {
+          font-family: 'Poppins', Arial, sans-serif;
+          background: #f5f7fa;
+          color: #111827;
+          margin: 0;
+          padding: 2rem 1rem;
+          max-width: 900px;
+          margin-inline: auto;
+        }
+
+        /* ✅ Navigation */
+        nav {
+          display: flex;
+          justify-content: center;
+          gap: 1.5rem;
+          flex-wrap: wrap;
+          margin-bottom: 1.5rem;
+        }
+
+        nav a {
+          color: #2563eb;
+          font-weight: 600;
+          text-decoration: none;
+          position: relative;
+          cursor: pointer;
+          transition: color 0.3s ease;
+        }
+
+        nav a:hover {
+          color: #1d4ed8;
+        }
+
+        nav a::after {
+          content: "";
+          position: absolute;
+          width: 0%;
+          height: 2px;
+          bottom: -4px;
+          left: 0;
+          background-color: #2563eb;
+          transition: width 0.3s;
+          border-radius: 2px;
+        }
+
+        nav a:hover::after {
+          width: 100%;
+        }
+
+        hr {
+          border: none;
+          height: 1px;
+          background: #e5e7eb;
+          margin-bottom: 1.5rem;
+        }
+
+        /* ✅ Sections */
+        section {
+          display: none;
+          background: #ffffff;
+          padding: 1.5rem;
+          border-radius: 16px;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+          animation: fadeIn 0.3s ease-in-out;
+        }
+
+        section.active {
+          display: block;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        section h2 {
+          margin-bottom: 1rem;
+          font-size: 1.3rem;
+          color: #1f2937;
+        }
+
+        /* ✅ Forms */
+        .form {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          margin-bottom: 1.2rem;
+        }
+
+        .form input {
+          padding: 10px 14px;
+          border: 1px solid #d1d5db;
+          border-radius: 10px;
+          outline: none;
+          font-size: 0.95rem;
+          transition: all 0.2s ease;
+        }
+
+        .form input:focus {
+          border-color: #2563eb;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        }
+
+        .form button {
+          background: linear-gradient(135deg, #2563eb, #3b82f6);
+          color: white;
+          border: none;
+          border-radius: 25px;
+          padding: 10px 20px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .form button:hover {
+          background: linear-gradient(135deg, #1e40af, #2563eb);
+          transform: scale(1.03);
+        }
+
+        /* ✅ Lists */
+        ul {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          display: grid;
+          gap: 10px;
+        }
+
+        li {
+          background: #f9fafb;
+          padding: 12px 16px;
+          border-radius: 12px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        li:hover {
+          background: #eef2ff;
+          transform: translateY(-2px);
+        }
+
+        li img {
+          width: 70px;
+          height: 70px;
+          border-radius: 10px;
+          object-fit: cover;
+          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        li span {
+          flex: 1;
+          margin-left: 1rem;
+          color: #1f2937;
+          font-weight: 500;
+        }
+
+        li button {
+          background: #ef4444;
+          border: none;
+          padding: 8px 14px;
+          color: white;
+          border-radius: 10px;
+          font-size: 0.9rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        li button:hover {
+          background: #dc2626;
+          transform: scale(1.05);
+        }
+
+        /* ✅ Responsive */
+        @media (max-width: 640px) {
+          body {
+            padding: 1rem;
+          }
+
+          li {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+          }
+
+          li img {
+            width: 100%;
+            max-height: 180px;
+            border-radius: 12px;
+          }
+
+          li button {
+            align-self: flex-end;
+          }
+        }
   </style>
 </head>
 <body>
