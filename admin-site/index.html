@@ -250,10 +250,19 @@
   <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
-    const supabase = createClient(
-      "https://gycwoawekmmompvholqr.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5Y3dvYXdla21tb21wdmhvbHFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NDI3NzYsImV4cCI6MjA3MzQxODc3Nn0.DHYyJrV884VxxljeVZ0SQdWYMBSAvpKpCr1jKKaP1AI"
-    );
+    let supabase;
+
+    // Fetch config from Vercel API route
+    async function initSupabase() {
+      const res = await fetch("/api/config");
+      const config = await res.json();
+      supabase = createClient(config.SUPABASE_URL, config.SUPABASE_KEY);
+
+      loadMessages();
+      loadAlbum();
+      loadBarbers();
+    }
+
 
     const ALBUM_BUCKET = "album_bucket";
     const BARBERS_BUCKET = "barbers_bucket";
