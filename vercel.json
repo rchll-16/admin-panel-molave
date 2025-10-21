@@ -1,4 +1,9 @@
 {
+  "builds": [
+    { "src": "index.html", "use": "@vercel/static" },
+    { "src": "mobile.html", "use": "@vercel/static" },
+    { "src": "api/config.js", "use": "@vercel/node" }
+  ],
   "routes": [
     { "src": "/", "dest": "/index.html" },
     { "src": "/mobile", "dest": "/mobile.html" }
